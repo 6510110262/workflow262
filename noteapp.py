@@ -126,5 +126,43 @@ def notes_edit(note_id):
 
     return render_template("notes-edit.html", note=note, form=form)
 
+@app.route("/tags/edit/<int:tag_id>", methods=["GET", "POST"])
+def tags_edit(tag_id):
+
+    tag = Tag.query.get(tag_id)
+
+    form = TagForm()
+
+    if not tag:
+        return "tag not found", 404
+    if request.method == "POST":
+        tag.name = request.form["name"]
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    return render_template("tags-edit.html", tag=tag, form=form)
+
+@app.route("/tags/delete/<int:tag_id>", methods=["GET", "POST"])
+def tags_delete(tag_id):
+    tag = Tag.query.get(tag_id)
+    form = TagForm()
+
+    if not tag:
+        return "Tag not found", 404
+
+    if request.method == "POST":
+        referenced_notes = Note.query.filter(Note.tags.any(id=tag_id)).all()
+        if referenced_notes:
+            for note in referenced_notes:
+                note.tags.remove(tag) 
+
+            db.session.commit()
+            db.session.delete(tag)
+            db.session.commit()
+
+            return redirect(url_for("index"))
+
+    return render_template("tags-del.html", tag=tag, form=form)
+
 if __name__ == "__main__":
     app.run(debug=True)

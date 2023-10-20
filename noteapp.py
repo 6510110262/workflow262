@@ -107,5 +107,24 @@ def notes_delete(note_id):
 
     return render_template("notes-del.html", note=note, form=form)
 
+@app.route("/notes/edit/<int:note_id>", methods=["GET", "POST"])
+def notes_edit(note_id):
+    # ดึงข้อมูลโน๊ตที่ต้องการแก้ไขจากฐานข้อมูล
+    note = Note.query.get(note_id)
+
+    if not note:
+        return "Note not found", 404
+
+    form = NoteForm()
+
+    if request.method == "POST":
+        note.title = request.form["title"]
+        note.description = request.form["description"]
+        db.session.commit()
+
+        return redirect(url_for("index"))
+
+    return render_template("notes-edit.html", note=note, form=form)
+
 if __name__ == "__main__":
     app.run(debug=True)

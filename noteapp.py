@@ -80,25 +80,23 @@ def tags_view(tag_name):
     )
 @app.route("/notes/edit/<int:note_id>", methods=["GET", "POST"])
 def notes_edit(note_id):
-    db = models.db
-    note = db.session.query(models.Note).get(note_id)
+    note = Note.query.get(note_id)
     if not note:
         return "Note not found", 404
-
-    form = forms.NoteForm(obj=note)
-    if form.validate_on_submit():
-        form.populate_obj(note)
+    form = NoteForm()
+    if request.method == "POST":
+        note.title = request.form["title"]
+        note.description = request.form["description"]
         db.session.commit()
-        return flask.redirect(flask.url_for("index"))
+        return redirect(url_for("index"))
 
-    return flask.render_template("notes-edit.html", form=form, note=note)
+    return render_template("notes-edit.html", note=note, form=form)
 
 @app.route("/notes/delete/<int:note_id>", methods=["GET", "POST"])
 def notes_delete(note_id):
     note = Note.query.get(note_id)
     if not note:
         return "Note not found", 404
-
     form = NoteForm()
     if request.method == "POST":
         db.session.delete(note)
@@ -106,25 +104,6 @@ def notes_delete(note_id):
         return redirect(url_for("index"))
 
     return render_template("notes-del.html", note=note, form=form)
-
-@app.route("/notes/edit/<int:note_id>", methods=["GET", "POST"])
-def notes_edit(note_id):
-    # ดึงข้อมูลโน๊ตที่ต้องการแก้ไขจากฐานข้อมูล
-    note = Note.query.get(note_id)
-
-    if not note:
-        return "Note not found", 404
-
-    form = NoteForm()
-
-    if request.method == "POST":
-        note.title = request.form["title"]
-        note.description = request.form["description"]
-        db.session.commit()
-
-        return redirect(url_for("index"))
-
-    return render_template("notes-edit.html", note=note, form=form)
 
 @app.route("/tags/edit/<int:tag_id>", methods=["GET", "POST"])
 def tags_edit(tag_id):
@@ -149,7 +128,6 @@ def tags_delete(tag_id):
 
     if not tag:
         return "Tag not found", 404
-
     if request.method == "POST":
         referenced_notes = Note.query.filter(Note.tags.any(id=tag_id)).all()
         if referenced_notes:

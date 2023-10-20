@@ -3,6 +3,9 @@ import flask
 import models
 import forms
 
+from flask import render_template, request, redirect, url_for, flash
+from forms import NoteForm, TagForm
+from models import Tag, db, Note
 
 app = flask.Flask(__name__)
 app.config["SECRET_KEY"] = "This is secret key"
@@ -90,6 +93,19 @@ def notes_edit(note_id):
 
     return flask.render_template("notes-edit.html", form=form, note=note)
 
+@app.route("/notes/delete/<int:note_id>", methods=["GET", "POST"])
+def notes_delete(note_id):
+    note = Note.query.get(note_id)
+    if not note:
+        return "Note not found", 404
+
+    form = NoteForm()
+    if request.method == "POST":
+        db.session.delete(note)
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    return render_template("notes-del.html", note=note, form=form)
 
 if __name__ == "__main__":
     app.run(debug=True)
